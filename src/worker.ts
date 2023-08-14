@@ -85,7 +85,10 @@ async function callback(request: Request, env: Env): Promise<Response> {
 
 	const joinResponse = await fetch(`https://discord.com/api/guilds/${env.DISCORD_MY_GUILD_ID}/members/${user.id}`, {
 		method: 'PUT',
-		headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` },
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bot ${env.DISCORD_TOKEN}`,
+		},
 		body: JSON.stringify({ access_token } satisfies RESTPutAPIGuildMemberJSONBody),
 	});
 	if (!joinResponse.ok) {
