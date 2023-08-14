@@ -63,6 +63,7 @@ async function callback(request: Request, env: Env): Promise<Response> {
 			client_secret: env.DISCORD_CLIENT_SECRET,
 			grant_type: 'authorization_code',
 			code,
+			redirect_uri: new URL('/callback', request.url).toString(),
 		} satisfies RESTPostOAuth2AccessTokenURLEncodedData),
 	});
 	const { access_token } = await tokenResponse.json<RESTPostOAuth2AccessTokenResult>();
