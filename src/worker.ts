@@ -36,16 +36,26 @@ export default {
 };
 
 async function authorize(request: Request, env: Env): Promise<Response> {
+	const state = btoa(crypto.getRandomValues(new Uint8Array(16)).toString());
+	const redirect = new URL('/callback', request.url);
+
 	const url = new URL('https://discord.com/oauth2/authorize');
 	const searchParams = new URLSearchParams({
 		client_id: env.DISCORD_CLIENT_ID,
 		scope: 'identify guilds guilds.join',
 		response_type: 'code',
-		redirect_uri: new URL('/callback', request.url).toString(),
+		redirect_uri: redirect.toString(),
+		state,
 	} satisfies RESTOAuth2AuthorizationQuery);
 	url.search = searchParams.toString();
 
-	return Response.redirect(url.toString());
+	return new Response(undefined, {
+		status: 302,
+		headers: {
+			Location: url.toString(),
+			'Set-Cookie': `state=${state}; HttpOnly;${redirect.protocol === 'https:' ? 'Secure;' : ''} SameSite=Lax`,
+		},
+	});
 }
 
 async function callback(request: Request, env: Env): Promise<Response> {
@@ -54,6 +64,10 @@ async function callback(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url);
 	const code = url.searchParams.get('code');
 	if (!code) return new Response('no code', { status: 400 });
+
+	const stateFromQuery = url.searchParams.get('state');
+	const stateFromCookie = request.headers.get('Cookie')?.match(/state=(.+?)(?:;|$)/)?.[1];
+	if (stateFromQuery !== stateFromCookie) return new Response('state mismatch', { status: 400 });
 
 	const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
 		method: 'POST',
