@@ -23,6 +23,8 @@ export default {
 
 		const { pathname } = new URL(request.url);
 		switch (pathname) {
+			case '/':
+				return Response.redirect('https://github.com/cm-ayf/discord-restricted-guild-invite');
 			case '/authorize':
 				return authorize(request, env);
 			case '/callback':
